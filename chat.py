@@ -5,6 +5,12 @@ import tkinter
 import tkinter.scrolledtext
 from tkinter import simpledialog
 
+# A simple P2P chat program between two peers.
+#
+# Amela Aganovic
+# CIS 457
+# W2021
+
 HOST = '127.0.0.1'
 PORT = 1234
 
@@ -14,11 +20,17 @@ class Client:
     
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.sock.bind((HOST, PORT))
-                
-        self.sock.listen()
-        peer, address = self.sock.accept() #FIXME? 
-        self.peer = peer
+        
+        try:
+            # 2nd peer code
+            self.sock.connect((host, port))
+        except:
+            # 1st peer code
+            print("Waiting for friend to connect...")
+            self.sock.bind((HOST, PORT))
+            self.sock.listen()
+            peer, address = self.sock.accept()
+            self.sock = peer
         
         msg = tkinter.Tk()
         msg.withdraw()
@@ -36,9 +48,10 @@ class Client:
         
     def gui_loop(self):
         self.win = tkinter.Tk()
-        self.win.configure(bg="cyan")
+        self.win.configure(bg="#A4C1DB")
+        self.win.title("Chatroom")
         
-        self.chat_label = tkinter.Label(self.win, text="Chat", bg="cyan")
+        self.chat_label = tkinter.Label(self.win, text="Chat", bg="#A4C1DB")
         self.chat_label.config(font=("Arial", 16))
         self.chat_label.pack(padx=20, pady=5)
         
@@ -46,7 +59,7 @@ class Client:
         self.text_area.pack(padx=20, pady=5)
         self.text_area.config(state='disabled')
         
-        self.msg_label = tkinter.Label(self.win, text="Message", bg="cyan")
+        self.msg_label = tkinter.Label(self.win, text="Message", bg="#A4C1DB")
         self.msg_label.config(font=("Arial", 16))
         self.msg_label.pack(padx=20, pady=5)
         
@@ -57,6 +70,10 @@ class Client:
         self.send_button.config(font=("Arial", 16))
         self.send_button.pack(padx=20, pady=5)
         
+        self.exit_button = tkinter.Button(self.win, text="Exit", command=self.stop)
+        self.exit_button.config(font=("Arial", 16))
+        self.exit_button.pack(padx=20, pady=5)
+        
         self.gui_done = True
         
         self.win.protocol("WM_DELETE_WINDOW", self.stop)
@@ -65,7 +82,7 @@ class Client:
         
     def write(self):
         message = f"{self.nickname}: {self.input_area.get('1.0', 'end')}"
-        self.peer.send(message.encode('utf-8'))
+        self.sock.send(message.encode('utf-8'))
         self.input_area.delete('1.0', 'end')
         
         self.text_area.config(state='normal')
@@ -76,15 +93,15 @@ class Client:
     def stop(self):
         self.running = False
         self.win.destroy()
-        self.peer.close()
+        self.sock.close()
         exit(0)
         
     def receive(self):
         while self.running:
             try:
-                message = self.peer.recv(1024).decode('utf-8')
+                message = self.sock.recv(1024).decode('utf-8')
                 if message == 'NICK':
-                    self.peer.send(self.nickname.encode('utf-8'))
+                    self.sock.send(self.nickname.encode('utf-8'))
                 else:
                     if self.gui_done:
                         self.text_area.config(state='normal')
@@ -95,7 +112,7 @@ class Client:
                 break
             except:
                 print("Error")
-                self.peer.close()
+                self.sock.close()
                 break
                 
 client = Client(HOST, PORT)
