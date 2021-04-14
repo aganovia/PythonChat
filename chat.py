@@ -1,9 +1,11 @@
 import socket
 import sys
 import threading
-import tkinter
+#import tkinter
+from tkinter import *
 import tkinter.scrolledtext
 from tkinter import simpledialog
+from PIL import ImageTk, Image
 
 # A simple P2P chat program between two peers.
 #
@@ -37,17 +39,23 @@ class Client:
         
         self.nickname = simpledialog.askstring("Nickname", "Please choose a nickname", parent=msg)
         
+        #self.nickname = "Friend"
+        
         self.gui_done = False
         self.running = True
         
-        gui_thread = threading.Thread(target=self.gui_loop)
+        #gui_thread = threading.Thread(target=self.gui_loop)
         receive_thread = threading.Thread(target=self.receive)
         
-        gui_thread.start()
+        #gui_thread.start()
         receive_thread.start()
+        self.gui_loop()
+        
         
     def gui_loop(self):
-        self.win = tkinter.Tk()
+        #self.win = tkinter.Tk()
+        #self.win = Tk()
+        self.win = tkinter.Toplevel()
         self.win.configure(bg="#A4C1DB")
         self.win.title("Chatroom")
         
@@ -58,6 +66,19 @@ class Client:
         self.text_area = tkinter.scrolledtext.ScrolledText(self.win, font=("Arial", 12))
         self.text_area.pack(padx=20, pady=5)
         self.text_area.config(state='disabled')
+        
+        # area that displays an emoji image
+        # TODO: add a text label that says "Emoji sent" ?
+
+        # load up the images
+        self.smiling_image = tkinter.PhotoImage(file='face-smiling.png')
+        self.frowning_image = tkinter.PhotoImage(file='frowning-face.png')
+        self.joy_image = tkinter.PhotoImage(file='tears-of-joy.png')
+        self.tear_image = tkinter.PhotoImage(file='smiling-tear.png')
+        
+        # set the image to be displayed
+        self.image_label = tkinter.Label(self.win, image=self.tear_image)
+        self.image_label.pack(padx=20, pady=5)
         
         self.msg_label = tkinter.Label(self.win, text="Message", bg="#A4C1DB")
         self.msg_label.config(font=("Arial", 16))
@@ -78,6 +99,8 @@ class Client:
         
         self.win.protocol("WM_DELETE_WINDOW", self.stop)
         
+        self.emoji_toggle = 1 #TODO delete later, for testing only
+        
         self.win.mainloop()
         
     def write(self):
@@ -90,11 +113,18 @@ class Client:
         self.text_area.yview('end')
         self.text_area.config(state='disabled')
         
+        # TODO delete later, for testing only
+        if (self.emoji_toggle == 1):
+            self.image_label.config(image=self.smiling_image)
+            self.emoji_toggle = 2
+        else:
+            self.image_label.config(image=self.tear_image)
+        
     def stop(self):
         self.running = False
         self.win.destroy()
         self.sock.close()
-        exit(0)
+        sys.exit(0)
         
     def receive(self):
         while self.running:
