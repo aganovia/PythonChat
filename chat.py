@@ -5,9 +5,10 @@ import threading
 from tkinter import *
 import tkinter.scrolledtext
 from tkinter import simpledialog
-from PIL import ImageTk, Image
+#from PIL import ImageTk, Image
 
 # A simple P2P chat program between two peers.
+# Adapted from code by NeuralNine.
 #
 # Amela Aganovic
 # CIS 457
@@ -39,8 +40,6 @@ class Client:
         
         self.nickname = simpledialog.askstring("Nickname", "Please choose a nickname", parent=msg)
         
-        #self.nickname = "Friend"
-        
         self.gui_done = False
         self.running = True
         
@@ -61,45 +60,59 @@ class Client:
         
         self.chat_label = tkinter.Label(self.win, text="Chat", bg="#A4C1DB")
         self.chat_label.config(font=("Arial", 16))
-        self.chat_label.pack(padx=20, pady=5)
+        self.chat_label.grid(row=0, column=0)
         
         self.text_area = tkinter.scrolledtext.ScrolledText(self.win, font=("Arial", 12))
-        self.text_area.pack(padx=20, pady=5)
+        self.text_area.grid(row=1, column=0)
         self.text_area.config(state='disabled')
         
         # area that displays an emoji image
-        # TODO: add a text label that says "Emoji sent" ?
+        self.emoji_label = tkinter.Label(self.win, text="Your friend sent you:", font=("Arial", 12), bg="#A4C1DB")
+        self.emoji_label.grid(row=2, column=0)
 
         # load up the images
+        self.blank_image = tkinter.PhotoImage(file='no-emoji.png')
         self.smiling_image = tkinter.PhotoImage(file='face-smiling.png')
         self.frowning_image = tkinter.PhotoImage(file='frowning-face.png')
         self.joy_image = tkinter.PhotoImage(file='tears-of-joy.png')
         self.tear_image = tkinter.PhotoImage(file='smiling-tear.png')
         
-        # set the image to be displayed
-        self.image_label = tkinter.Label(self.win, image=self.tear_image)
-        self.image_label.pack(padx=20, pady=5)
+        # set image as blank by default
+        self.image_label = tkinter.Label(self.win, image=self.blank_image)
+        self.image_label.grid(row=3, column=0)
         
+        # message label
         self.msg_label = tkinter.Label(self.win, text="Message", bg="#A4C1DB")
         self.msg_label.config(font=("Arial", 16))
-        self.msg_label.pack(padx=20, pady=5)
+        self.msg_label.grid(row=4, column=0)
         
+        # input area
         self.input_area = tkinter.Text(self.win, height=3, font=("Arial", 12))
-        self.input_area.pack(padx=20, pady=5)
+        self.input_area.grid(row=5, column=0)
         
-        self.send_button = tkinter.Button(self.win, text="Send", command=self.write)
+        # emoji buttons
+        
+        self.smile_button = tkinter.Button(self.win, text=":^)", command= lambda: self.send_emoji("smile"))
+        self.smile_button.config(font=("Arial", 16))
+        self.smile_button.grid(row=6, column=0)
+        
+        # frame for send and exit buttons
+        self.sendexit_frame = tkinter.Frame(self.win, bg="#A4C1DB")
+        self.sendexit_frame.grid(row=7, column=0)
+
+        self.send_button = tkinter.Button(self.sendexit_frame, text="Send", command=self.write)
         self.send_button.config(font=("Arial", 16))
-        self.send_button.pack(padx=20, pady=5)
+        self.send_button.pack(padx=20, pady=5, side = LEFT)
         
-        self.exit_button = tkinter.Button(self.win, text="Exit", command=self.stop)
+        self.exit_button = tkinter.Button(self.sendexit_frame, text="Exit", command= self.stop)
         self.exit_button.config(font=("Arial", 16))
-        self.exit_button.pack(padx=20, pady=5)
+        self.exit_button.pack(padx=20, pady=5, side = RIGHT)
+        
+        # finish GUI and run it
         
         self.gui_done = True
         
         self.win.protocol("WM_DELETE_WINDOW", self.stop)
-        
-        self.emoji_toggle = 1 #TODO delete later, for testing only
         
         self.win.mainloop()
         
@@ -113,12 +126,13 @@ class Client:
         self.text_area.yview('end')
         self.text_area.config(state='disabled')
         
-        # TODO delete later, for testing only
-        if (self.emoji_toggle == 1):
-            self.image_label.config(image=self.smiling_image)
-            self.emoji_toggle = 2
-        else:
-            self.image_label.config(image=self.tear_image)
+        self.image_label.config(image=self.blank_image)
+            
+    def send_emoji(self, emoji):
+        self.sock.send(emoji.encode('utf-8'))
+        print("Emoji sent")
+        
+        # TODO update emoji display for this screen?
         
     def stop(self):
         self.running = False
@@ -134,10 +148,14 @@ class Client:
                     self.sock.send(self.nickname.encode('utf-8'))
                 else:
                     if self.gui_done:
-                        self.text_area.config(state='normal')
-                        self.text_area.insert('end', message)
-                        self.text_area.yview('end')
-                        self.text_area.config(state='disabled')
+                        if message == "smile":
+                            print("Smile received") #TODO delete later
+                            self.image_label.config(image=self.smiling_image)
+                        else:
+                            self.text_area.config(state='normal')
+                            self.text_area.insert('end', message)
+                            self.text_area.yview('end')
+                            self.text_area.config(state='disabled')
             except ConnectionAbortedError:
                 break
             except:
