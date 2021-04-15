@@ -92,9 +92,24 @@ class Client:
         
         # emoji buttons
         
-        self.smile_button = tkinter.Button(self.win, text=":^)", command= lambda: self.send_emoji("smile"))
+        self.emojis_frame = tkinter.Frame(self.win, bg="#A4C1DB")
+        self.emojis_frame.grid(row=6, column=0)
+        
+        self.smile_button = tkinter.Button(self.emojis_frame, text=":^)", command= lambda: self.send_emoji("smile"))
         self.smile_button.config(font=("Arial", 16))
-        self.smile_button.grid(row=6, column=0)
+        self.smile_button.grid(row=0, column=0)
+        
+        self.frowning_button = tkinter.Button(self.emojis_frame, text=":^(", command= lambda: self.send_emoji("frown"))
+        self.frowning_button.config(font=("Arial", 16))
+        self.frowning_button.grid(row=0, column=1)
+        
+        self.joy_button = tkinter.Button(self.emojis_frame, text=":^D", command= lambda: self.send_emoji("joy"))
+        self.joy_button.config(font=("Arial", 16))
+        self.joy_button.grid(row=0, column=2)
+        
+        self.tear_button = tkinter.Button(self.emojis_frame, text=":'^(", command= lambda: self.send_emoji("tear"))
+        self.tear_button.config(font=("Arial", 16))
+        self.tear_button.grid(row=0, column=3)
         
         # frame for send and exit buttons
         self.sendexit_frame = tkinter.Frame(self.win, bg="#A4C1DB")
@@ -151,6 +166,15 @@ class Client:
                         if message == "smile":
                             print("Smile received") #TODO delete later
                             self.image_label.config(image=self.smiling_image)
+                        elif message == "frown":
+                            print("Frown received")
+                            self.image_label.config(image=self.frowning_image)
+                        elif message == "joy":
+                            print("Joy received")
+                            self.image_label.config(image=self.joy_image)
+                        elif message == "tear":
+                            print("Tear received")
+                            self.image_label.config(image=self.tear_image)
                         else:
                             self.text_area.config(state='normal')
                             self.text_area.insert('end', message)
