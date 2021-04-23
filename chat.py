@@ -49,8 +49,6 @@ class Client:
         
         
     def gui_loop(self):
-        #self.win = tkinter.Tk()
-        #self.win = Tk()
         self.win = tkinter.Toplevel()
         self.win.configure(bg="#A4C1DB")
         self.win.title("Chatroom")
