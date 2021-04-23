@@ -1,11 +1,12 @@
 import socket
 import sys
 import threading
-import tkinter
+from tkinter import *
 import tkinter.scrolledtext
 from tkinter import simpledialog
 
 # A simple P2P chat program between two peers.
+# Adapted from code by NeuralNine.
 #
 # Amela Aganovic
 # CIS 457
@@ -40,39 +41,86 @@ class Client:
         self.gui_done = False
         self.running = True
         
-        gui_thread = threading.Thread(target=self.gui_loop)
         receive_thread = threading.Thread(target=self.receive)
-        
-        gui_thread.start()
+
         receive_thread.start()
         
+        self.gui_loop()
+        
+        
     def gui_loop(self):
-        self.win = tkinter.Tk()
+        #self.win = tkinter.Tk()
+        #self.win = Tk()
+        self.win = tkinter.Toplevel()
         self.win.configure(bg="#A4C1DB")
         self.win.title("Chatroom")
         
         self.chat_label = tkinter.Label(self.win, text="Chat", bg="#A4C1DB")
         self.chat_label.config(font=("Arial", 16))
-        self.chat_label.pack(padx=20, pady=5)
+        self.chat_label.grid(row=0, column=0)
         
         self.text_area = tkinter.scrolledtext.ScrolledText(self.win, font=("Arial", 12))
-        self.text_area.pack(padx=20, pady=5)
+        self.text_area.grid(row=1, column=0)
         self.text_area.config(state='disabled')
         
+        # area that displays an emoji image
+        self.emoji_label = tkinter.Label(self.win, text="Your friend sent you:", font=("Arial", 12), bg="#A4C1DB")
+        self.emoji_label.grid(row=2, column=0)
+
+        # load up the images
+        self.blank_image = tkinter.PhotoImage(file='no-emoji.png')
+        self.smiling_image = tkinter.PhotoImage(file='face-smiling.png')
+        self.frowning_image = tkinter.PhotoImage(file='frowning-face.png')
+        self.joy_image = tkinter.PhotoImage(file='tears-of-joy.png')
+        self.tear_image = tkinter.PhotoImage(file='smiling-tear.png')
+        
+        # set image as blank by default
+        self.image_label = tkinter.Label(self.win, image=self.blank_image)
+        self.image_label.grid(row=3, column=0)
+        
+        # message label
         self.msg_label = tkinter.Label(self.win, text="Message", bg="#A4C1DB")
         self.msg_label.config(font=("Arial", 16))
-        self.msg_label.pack(padx=20, pady=5)
+        self.msg_label.grid(row=4, column=0)
         
+        # input area
         self.input_area = tkinter.Text(self.win, height=3, font=("Arial", 12))
-        self.input_area.pack(padx=20, pady=5)
+        self.input_area.grid(row=5, column=0)
         
-        self.send_button = tkinter.Button(self.win, text="Send", command=self.write)
+        # emoji buttons
+        
+        self.emojis_frame = tkinter.Frame(self.win, bg="#A4C1DB")
+        self.emojis_frame.grid(row=6, column=0)
+        
+        self.smile_button = tkinter.Button(self.emojis_frame, text=":^)", command= lambda: self.send_emoji("smile"))
+        self.smile_button.config(font=("Arial", 16))
+        self.smile_button.grid(row=0, column=0)
+        
+        self.frowning_button = tkinter.Button(self.emojis_frame, text=":^(", command= lambda: self.send_emoji("frown"))
+        self.frowning_button.config(font=("Arial", 16))
+        self.frowning_button.grid(row=0, column=1)
+        
+        self.joy_button = tkinter.Button(self.emojis_frame, text=":^D", command= lambda: self.send_emoji("joy"))
+        self.joy_button.config(font=("Arial", 16))
+        self.joy_button.grid(row=0, column=2)
+        
+        self.tear_button = tkinter.Button(self.emojis_frame, text=":'^(", command= lambda: self.send_emoji("tear"))
+        self.tear_button.config(font=("Arial", 16))
+        self.tear_button.grid(row=0, column=3)
+        
+        # frame for send and exit buttons
+        self.sendexit_frame = tkinter.Frame(self.win, bg="#A4C1DB")
+        self.sendexit_frame.grid(row=7, column=0)
+
+        self.send_button = tkinter.Button(self.sendexit_frame, text="Send", command=self.write)
         self.send_button.config(font=("Arial", 16))
-        self.send_button.pack(padx=20, pady=5)
+        self.send_button.pack(padx=20, pady=5, side = LEFT)
         
-        self.exit_button = tkinter.Button(self.win, text="Exit", command=self.stop)
+        self.exit_button = tkinter.Button(self.sendexit_frame, text="Exit", command= self.stop)
         self.exit_button.config(font=("Arial", 16))
-        self.exit_button.pack(padx=20, pady=5)
+        self.exit_button.pack(padx=20, pady=5, side = RIGHT)
+        
+        # finish GUI and run it
         
         self.gui_done = True
         
@@ -90,11 +138,17 @@ class Client:
         self.text_area.yview('end')
         self.text_area.config(state='disabled')
         
+        self.image_label.config(image=self.blank_image)
+            
+    def send_emoji(self, emoji):
+        self.sock.send(emoji.encode('utf-8'))
+        print("Emoji sent")
+        
     def stop(self):
         self.running = False
         self.win.destroy()
         self.sock.close()
-        exit(0)
+        sys.exit(0)
         
     def receive(self):
         while self.running:
@@ -104,10 +158,23 @@ class Client:
                     self.sock.send(self.nickname.encode('utf-8'))
                 else:
                     if self.gui_done:
-                        self.text_area.config(state='normal')
-                        self.text_area.insert('end', message)
-                        self.text_area.yview('end')
-                        self.text_area.config(state='disabled')
+                        if message == "smile":
+                            print("Smile received")
+                            self.image_label.config(image=self.smiling_image)
+                        elif message == "frown":
+                            print("Frown received")
+                            self.image_label.config(image=self.frowning_image)
+                        elif message == "joy":
+                            print("Joy received")
+                            self.image_label.config(image=self.joy_image)
+                        elif message == "tear":
+                            print("Tear received")
+                            self.image_label.config(image=self.tear_image)
+                        else:
+                            self.text_area.config(state='normal')
+                            self.text_area.insert('end', message)
+                            self.text_area.yview('end')
+                            self.text_area.config(state='disabled')
             except ConnectionAbortedError:
                 break
             except:
