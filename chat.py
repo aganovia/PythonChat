@@ -1,11 +1,9 @@
 import socket
 import sys
 import threading
-#import tkinter
 from tkinter import *
 import tkinter.scrolledtext
 from tkinter import simpledialog
-#from PIL import ImageTk, Image
 
 # A simple P2P chat program between two peers.
 # Adapted from code by NeuralNine.
@@ -43,11 +41,10 @@ class Client:
         self.gui_done = False
         self.running = True
         
-        #gui_thread = threading.Thread(target=self.gui_loop)
         receive_thread = threading.Thread(target=self.receive)
-        
-        #gui_thread.start()
+
         receive_thread.start()
+        
         self.gui_loop()
         
         
@@ -147,8 +144,6 @@ class Client:
         self.sock.send(emoji.encode('utf-8'))
         print("Emoji sent")
         
-        # TODO update emoji display for this screen?
-        
     def stop(self):
         self.running = False
         self.win.destroy()
@@ -164,7 +159,7 @@ class Client:
                 else:
                     if self.gui_done:
                         if message == "smile":
-                            print("Smile received") #TODO delete later
+                            print("Smile received")
                             self.image_label.config(image=self.smiling_image)
                         elif message == "frown":
                             print("Frown received")
